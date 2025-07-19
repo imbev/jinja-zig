@@ -5,7 +5,7 @@ pub fn build(b: *std.Build) void {
 
     const optimize = b.standardOptimizeOption(.{});
 
-    const root_module = b.createModule(.{
+    const root_module = b.addModule("jinja_zig", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
@@ -16,8 +16,6 @@ pub fn build(b: *std.Build) void {
         .name = "jinja_zig",
         .root_module = root_module,
     });
-
-    lib.root_module.addImport("jinja_zig", root_module);
 
     b.installArtifact(lib);
 

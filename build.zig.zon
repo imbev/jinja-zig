@@ -10,4 +10,10 @@
         "src",
         "LICENSE.md",
     },
+    .modules = .{
+        .jinja_zig = .{
+            .path = "src/root.zig",
+            .dependencies = .{},
+        },
+    },
 }
