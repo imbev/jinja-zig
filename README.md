@@ -82,3 +82,5 @@ pub fn on_request(r: zap.Request) !void {
     - [ ] inline if
     - [ ] struct methods
 - [x] Comments
+    - [x] Single-line
+    - [x] Multi-line
