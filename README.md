@@ -23,7 +23,7 @@ const jinja_zig_dep = b.dependency("jinja_zig", .{
     .optimize = optimize,
 });
 
-const jinja_zig = jinja_zig_dep.module("jinja_zig);
+const jinja_zig = jinja_zig_dep.module("jinja_zig");
 
 exe.root_module.addImport("jinja_zig", jinja_zig);
 
