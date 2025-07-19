@@ -37,3 +37,48 @@ pub fn on_request(r: zap.Request) !void {
     r.sendBody(try jinja.eval_file(std.heap.page_allocator, "index.jinja")) catch return;
 }
 ```
+
+### Roadmap
+
+- [x] Plain HTML
+- [] Statements
+    - [] for
+    - [] if
+    - [] macro
+    - [] call
+    - [] filter
+        - upper()
+        - ...
+    - [] set
+    - [] extends
+    - [] block
+    - [] include
+    - [] import
+- [] Expressions
+    - [] Literals
+        - [x] string
+        - [] integer
+        - [] float
+        - [] list
+        - [] tumple
+        - [] dict
+        - [] boolean
+    - [] Math
+        - \+
+        - ...
+    - [] Comparisons
+        - ...
+    - [] Logic
+        - [] and
+        - [] or
+        - [] not
+        - [] (expr)
+    - [] in
+    - [] is
+    - [] filter
+    - [] concatenate
+    - [] callable
+    - [] attribute
+    - [] inline if
+    - [] struct methods
+- [x] Comments
