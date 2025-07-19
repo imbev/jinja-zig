@@ -48,13 +48,17 @@ pub fn on_request(r: zap.Request) !void {
     - [ ] call
     - [ ] filter
         - [ ] upper()
-        - ...
+        - [ ] ...
     - [ ] set
     - [ ] extends
     - [ ] block
     - [ ] include
     - [ ] import
 - [ ] Expressions
+    - [ ] Variables
+        - [ ] value
+        - [ ] methods
+        - [ ] attribute
     - [ ] Literals
         - [x] string
         - [ ] integer
@@ -65,9 +69,9 @@ pub fn on_request(r: zap.Request) !void {
         - [ ] boolean
     - [ ] Math
         - [ ] \+
-        - ...
+        - [ ] ...
     - [ ] Comparisons
-        - ...
+        - [ ] ...
     - [ ] Logic
         - [ ] and
         - [ ] or
@@ -78,9 +82,10 @@ pub fn on_request(r: zap.Request) !void {
     - [ ] filter
     - [ ] concatenate
     - [ ] callable
-    - [ ] attribute
     - [ ] inline if
-    - [ ] struct methods
 - [x] Comments
     - [x] Single-line
     - [x] Multi-line
+- [ ] Performance
+    - [ ] Memoization
+    - [ ] Compile-time optimizations
