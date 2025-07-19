@@ -28,7 +28,7 @@ exe.root_module.addImport("jinja_zig", jinja_zig.module("jinja_zig"));
 ```
 
 Example use in a Zap project
-```
+```zig
 const std = @import("std");
 const zap = @import("zap");
 const jinja = @import("jinja_zig");
