@@ -18,14 +18,12 @@ zig fetch --save git+https://github.com/imbev/jinja-zig
 Then add the following to your `build.zig`:
 
 ```zig
-const jinja_zig_dep = b.dependency("jinja_zig", .{
-    .target = target,
-    .optimize = optimize,
-});
+const jinja_zig = b.dependency("jinja_zig", .{
+        .target = target,
+        .optimize = optimize,
+    });
 
-const jinja_zig = jinja_zig_dep.module("jinja_zig");
-
-exe.root_module.addImport("jinja_zig", jinja_zig);
+exe.root_module.addImport("jinja_zig", jinja_zig.module("jinja_zig"));
 
 ```
 
