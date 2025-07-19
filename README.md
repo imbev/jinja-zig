@@ -28,3 +28,14 @@ const jinja_zig = jinja_zig_dep.module("jinja_zig");
 exe.root_module.addImport("jinja_zig", jinja_zig);
 
 ```
+
+Example use in a Zap project
+```
+const std = @import("std");
+const zap = @import("zap");
+const jinja = @import("jinja_zig");
+
+pub fn on_request(r: zap.Request) !void {
+    r.sendBody(try jinja.eval_file(std.heap.page_allocator, "index.jinja")) catch return;
+}
+```
