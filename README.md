@@ -41,44 +41,44 @@ pub fn on_request(r: zap.Request) !void {
 ### Roadmap
 
 - [x] Plain HTML
-- [] Statements
-    - [] for
-    - [] if
-    - [] macro
-    - [] call
-    - [] filter
-        - upper()
+- [ ] Statements
+    - [ ] for
+    - [ ] if
+    - [ ] macro
+    - [ ] call
+    - [ ] filter
+        - [ ] upper()
         - ...
-    - [] set
-    - [] extends
-    - [] block
-    - [] include
-    - [] import
-- [] Expressions
-    - [] Literals
+    - [ ] set
+    - [ ] extends
+    - [ ] block
+    - [ ] include
+    - [ ] import
+- [ ] Expressions
+    - [ ] Literals
         - [x] string
-        - [] integer
-        - [] float
-        - [] list
-        - [] tumple
-        - [] dict
-        - [] boolean
-    - [] Math
-        - \+
+        - [ ] integer
+        - [ ] float
+        - [ ] list
+        - [ ] tumple
+        - [ ] dict
+        - [ ] boolean
+    - [ ] Math
+        - [ ] \+
         - ...
-    - [] Comparisons
+    - [ ] Comparisons
         - ...
-    - [] Logic
-        - [] and
-        - [] or
-        - [] not
-        - [] (expr)
-    - [] in
-    - [] is
-    - [] filter
-    - [] concatenate
-    - [] callable
-    - [] attribute
-    - [] inline if
-    - [] struct methods
+    - [ ] Logic
+        - [ ] and
+        - [ ] or
+        - [ ] not
+        - [ ] (expr)
+    - [ ] in
+    - [ ] is
+    - [ ] filter
+    - [ ] concatenate
+    - [ ] callable
+    - [ ] attribute
+    - [ ] inline if
+    - [ ] struct methods
 - [x] Comments
