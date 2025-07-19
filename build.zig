@@ -5,7 +5,7 @@ pub fn build(b: *std.Build) void {
 
     const optimize = b.standardOptimizeOption(.{});
 
-    const lib_mod = b.createModule(.{
+    const jinja_zig = b.createModule(.{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
@@ -14,13 +14,13 @@ pub fn build(b: *std.Build) void {
     const lib = b.addLibrary(.{
         .linkage = .static,
         .name = "jinja_zig",
-        .root_module = lib_mod,
+        .root_module = jinja_zig,
     });
 
     b.installArtifact(lib);
 
     const lib_unit_tests = b.addTest(.{
-        .root_module = lib_mod,
+        .root_module = jinja_zig,
     });
 
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
