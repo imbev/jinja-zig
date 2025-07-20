@@ -1,10 +1,10 @@
 const std = @import("std");
 const testing = std.testing;
-const Lexer = @import("lexer.zig");
-const Parser = @import("parser.zig");
-const Token = @import("token.zig");
+const Lexer = @import("lexer.zig").Lexer;
+const Parser = @import("parser.zig").Parser;
+const Token = @import("lexer.zig").Token;
 
-pub fn eval_file(allocator: std.mem.Allocator, path: []const u8) ![]u8 {
+pub fn eval_file(allocator: std.mem.Allocator, path: []const u8) ![]const u8 {
     return _eval_file(allocator, path, false);
 }
 
@@ -12,7 +12,7 @@ pub fn eval(allocator: std.mem.Allocator, content: []const u8) !u8 {
     return _eval(allocator, content, false);
 }
 
-fn _eval_file(allocator: std.mem.Allocator, path: []const u8, debug: bool) ![]u8 {
+fn _eval_file(allocator: std.mem.Allocator, path: []const u8, debug: bool) ![]const u8 {
     const file = try std.fs.cwd().openFile(path, .{});
     defer file.close();
 
@@ -21,15 +21,20 @@ fn _eval_file(allocator: std.mem.Allocator, path: []const u8, debug: bool) ![]u8
     return try _eval(allocator, content, debug);
 }
 
-fn _eval(allocator: std.mem.Allocator, content: []const u8, debug: bool) ![]u8 {
-    var lexer = Lexer{ .allocator = allocator, .source = content };
-    const tokens = try lexer.lex();
-    const final = try Parser.parse(allocator, tokens);
+fn _eval(allocator: std.mem.Allocator, content: []const u8, debug: bool) ![]const u8 {
+    var lexer = Lexer.init(content, "none");
+    var tokens = std.ArrayList(Token).init(allocator);
+    while (lexer.has_next()) {
+        try tokens.append(lexer.next());
+    }
+
+    var parser = Parser.init(allocator);
+    const final = try parser.parse(tokens);
 
     if (debug) {
         std.debug.print("==== Template ====\n", .{});
         for (tokens.items) |token| {
-            std.debug.print("== {s} ==\n{s}\n=====\n", .{ @tagName(token.token_type), token.source });
+            std.debug.print("== {s} ==\n{s}\n=====\n", .{ @tagName(token.kind), token.content });
         }
         std.debug.print("=========\n", .{});
     }

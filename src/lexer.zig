@@ -1,133 +1,151 @@
 const std = @import("std");
-const Token = @import("token.zig");
 
-allocator: std.mem.Allocator,
-source: []const u8,
+pub const TokenKind = enum {
+    STRING,
+    OPEN_BRACE,
+    CLOSE_BRACE,
+    PERCENT,
+    HASH,
+    QUOTE,
+    DOUBLE_QUOTE,
+    FOR,
+    IN,
+    VARIABLE,
+    SPACE,
+};
 
-pub fn lex(self: *@This()) !std.ArrayList(Token) {
-    var tokens = std.ArrayList(Token).init(self.allocator);
+pub const Token = struct {
+    kind: TokenKind,
+    content: []const u8,
 
-    var pass_one = std.ArrayList(Token).init(self.allocator);
-    defer pass_one.deinit();
-
-    for (self.source) |letter| {
-        try pass_one.append(switch (letter) {
-            '\\' => Token{ .token_type = Token.TokenType.BACKSLASH, .source = try std.fmt.allocPrint(self.allocator, "{c}", .{letter}) },
-            '{' => Token{ .token_type = Token.TokenType.LBRACE, .source = try std.fmt.allocPrint(self.allocator, "{c}", .{letter}) },
-            '}' => Token{ .token_type = Token.TokenType.RBRACE, .source = try std.fmt.allocPrint(self.allocator, "{c}", .{letter}) },
-            '#' => Token{ .token_type = Token.TokenType.NUMBER_SIGN, .source = try std.fmt.allocPrint(self.allocator, "{c}", .{letter}) },
-            '%' => Token{ .token_type = Token.TokenType.PERCENT, .source = try std.fmt.allocPrint(self.allocator, "{c}", .{letter}) },
-            '\'' => Token{ .token_type = Token.TokenType.QUOTE, .source = try std.fmt.allocPrint(self.allocator, "{c}", .{letter}) },
-            '"' => Token{ .token_type = Token.TokenType.DOUBLE_QUOTE, .source = try std.fmt.allocPrint(self.allocator, "{c}", .{letter}) },
-            else => Token{ .token_type = Token.TokenType.OTHER, .source = try std.fmt.allocPrint(self.allocator, "{c}", .{letter}) },
-        });
+    fn init(kind: TokenKind, content: []const u8) Token {
+        return Token{
+            .kind = kind,
+            .content = content,
+        };
     }
 
-    var pass_two = std.ArrayList(Token).init(self.allocator);
-    defer pass_two.deinit();
-
-    var i: usize = 0;
-    while (i < pass_one.items.len) {
-        if (pass_one.items[i].token_type == Token.TokenType.OTHER) {
-            var cursor: usize = i + 1;
-            while (cursor < pass_one.items.len and pass_one.items[cursor].token_type == Token.TokenType.OTHER) {
-                cursor += 1;
-            }
-            var other_token_sources = std.ArrayList([]const u8).init(self.allocator);
-            defer other_token_sources.deinit();
-            var content: []u8 = "";
-            for (pass_one.items[i..cursor]) |token| {
-                const new_content = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ content, token.source });
-                self.allocator.free(content);
-                content = new_content;
-            }
-            i = cursor - 1;
-            try pass_two.append(Token{ .token_type = Token.TokenType.OTHER, .source = content });
-        } else if (pass_one.items[i].token_type == Token.TokenType.LBRACE) {
-            try pass_two.append(switch (pass_one.items[i + 1].token_type) {
-                Token.TokenType.LBRACE => Token{ .token_type = Token.TokenType.EXPRESSION_DELIM_START, .source = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ pass_one.items[i].source, pass_one.items[i + 1].source }) },
-                Token.TokenType.NUMBER_SIGN => Token{ .token_type = Token.TokenType.COMMENT_DELIM_START, .source = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ pass_one.items[i].source, pass_one.items[i + 1].source }) },
-                Token.TokenType.PERCENT => Token{ .token_type = Token.TokenType.STATEMENT_DELIM_START, .source = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ pass_one.items[i].source, pass_one.items[i + 1].source }) },
-                Token.TokenType.OTHER => Token{ .token_type = Token.TokenType.OTHER, .source = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ pass_one.items[i].source, pass_one.items[i + 1].source }) },
-                else => pass_one.items[i],
-            });
-            i += 1;
-        } else if (pass_one.items[i].token_type == Token.TokenType.RBRACE) {
-            switch (pass_one.items[i - 1].token_type) {
-                Token.TokenType.RBRACE => {
-                    _ = pass_two.pop();
-                    try pass_two.append(Token{ .token_type = Token.TokenType.EXPRESSION_DELIM_END, .source = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ pass_one.items[i - 1].source, pass_one.items[i].source }) });
-                },
-                Token.TokenType.NUMBER_SIGN => {
-                    _ = pass_two.pop();
-                    try pass_two.append(Token{ .token_type = Token.TokenType.COMMENT_DELIM_END, .source = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ pass_one.items[i - 1].source, pass_one.items[i].source }) });
-                },
-                Token.TokenType.PERCENT => {
-                    _ = pass_two.pop();
-                    try pass_two.append(Token{ .token_type = Token.TokenType.STATEMENT_DELIM_END, .source = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ pass_one.items[i - 1].source, pass_one.items[i].source }) });
-                },
-                Token.TokenType.OTHER => {
-                    try pass_two.append(Token{ .token_type = Token.TokenType.OTHER, .source = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ pass_one.items[i - 1].source, pass_one.items[i].source }) });
-                },
-                else => try pass_two.append(pass_one.items[i]),
-            }
-        } else {
-            try pass_two.append(pass_one.items[i]);
+    pub fn log(self: *Token) void {
+        var repr = self.content;
+        if (std.mem.eql(u8, "\n", repr)) {
+            repr = "newline";
         }
-        i += 1;
+        std.debug.print("(token {s} \"{s}\")\n", .{ @tagName(self.kind), repr });
+    }
+};
+
+const Literals: [6]Token = .{
+    Token.init(TokenKind.OPEN_BRACE, "{"),
+    Token.init(TokenKind.CLOSE_BRACE, "}"),
+    Token.init(TokenKind.PERCENT, "%"),
+    Token.init(TokenKind.HASH, "#"),
+    Token.init(TokenKind.QUOTE, "'"),
+    Token.init(TokenKind.DOUBLE_QUOTE, "\""),
+};
+
+const Keywords: [2]Token = .{
+    Token.init(TokenKind.FOR, "for"),
+    Token.init(TokenKind.IN, "in"),
+};
+
+pub const Lexer = struct {
+    content: []const u8,
+    path: []const u8,
+    cursor: usize,
+
+    pub fn init(content: []const u8, path: []const u8) Lexer {
+        return Lexer{
+            .content = content,
+            .path = path,
+            .cursor = 0,
+        };
     }
 
-    var pass_three = std.ArrayList(Token).init(self.allocator);
-    defer pass_three.deinit();
+    pub fn has_next(self: *Lexer) bool {
+        return self.cursor < self.content.len;
+    }
 
-    i = 0;
-    while (i < pass_two.items.len) {
-        if (pass_two.items[i].token_type == Token.TokenType.COMMENT_DELIM_START) {
-            var cursor: usize = 0;
-            while (cursor < pass_two.items.len) {
-                if (pass_two.items[cursor].token_type == Token.TokenType.COMMENT_DELIM_END) {
-                    var other_token_sources = std.ArrayList([]const u8).init(self.allocator);
-                    defer other_token_sources.deinit();
-                    var content: []u8 = "";
-                    for (pass_two.items[i .. cursor + 1]) |token| {
-                        const new_content = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ content, token.source });
-                        self.allocator.free(content);
-                        content = new_content;
-                    }
-                    try pass_three.append(Token{ .token_type = Token.TokenType.COMMENT, .source = content });
-                    i = cursor + 1;
-                    break;
+    fn expect(self: *Lexer, expected: []const u8) bool {
+        if (self.cursor + expected.len < self.content.len) {
+            if (std.mem.eql(u8, self.content[self.cursor + 1 .. self.cursor + expected.len], expected[0 .. expected.len - 1])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    fn starts_with(self: *Lexer, prefix: []const u8) bool {
+        if (self.content.len < self.cursor + prefix.len) {
+            return false;
+        }
+        return std.mem.startsWith(u8, self.content[self.cursor .. self.cursor + prefix.len], prefix[0..prefix.len]);
+    }
+
+    fn followed_by_alphabetic(self: *Lexer) bool {
+        if (self.cursor + 1 >= self.content.len) {
+            return false;
+        }
+        return std.ascii.isAlphabetic(self.content[self.cursor + 1]);
+    }
+
+    pub fn next(self: *Lexer) Token {
+        var content: []const u8 = "";
+        var kind = TokenKind.STRING;
+
+        for (Literals) |literal| {
+            if (self.starts_with(literal.content)) {
+                kind = literal.kind;
+                content = literal.content;
+                self.cursor += literal.content.len;
+                return Token.init(kind, content);
+            }
+        }
+
+        if (self.starts_with(" ")) {
+            if (!self.followed_by_alphabetic()) {
+                content = self.content[self.cursor .. self.cursor + 1];
+                self.cursor += 1;
+                kind = TokenKind.SPACE;
+                return Token.init(kind, content);
+            }
+            var cursor2 = self.cursor + 1;
+            while (self.content[cursor2] != ' ') {
+                cursor2 += 1;
+                if (cursor2 >= self.content.len) {
+                    content = self.content[self.cursor .. self.cursor + 1];
+                    self.cursor += 1;
+                    return Token.init(kind, content);
                 }
-                cursor += 1;
             }
-        }
-        if (pass_two.items[i].token_type == Token.TokenType.EXPRESSION_DELIM_START) {
-            var cursor: usize = 0;
-            while (cursor < pass_two.items.len) {
-                if (pass_two.items[cursor].token_type == Token.TokenType.EXPRESSION_DELIM_END) {
-                    var other_token_sources = std.ArrayList([]const u8).init(self.allocator);
-                    defer other_token_sources.deinit();
-                    var content: []u8 = "";
-                    for (pass_two.items[i .. cursor + 1]) |token| {
-                        const new_content = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ content, token.source });
-                        self.allocator.free(content);
-                        content = new_content;
-                    }
-                    try pass_three.append(Token{ .token_type = Token.TokenType.EXPRESSION, .source = content });
-                    i = cursor;
-                    break;
+            kind = TokenKind.VARIABLE;
+            content = self.content[self.cursor + 1 .. cursor2];
+            self.cursor = cursor2;
+
+            for (Keywords) |keyword| {
+                if (std.mem.eql(u8, content, keyword.content)) {
+                    return keyword;
                 }
-                cursor += 1;
             }
-        } else {
-            try pass_three.append(pass_two.items[i]);
+
+            return Token.init(kind, content);
         }
-        i += 1;
+
+        content = self.content[self.cursor .. self.cursor + 1];
+
+        self.cursor += 1;
+        return Token.init(kind, content);
+    }
+};
+
+pub fn main() void {
+    const content = "<html>{{ \"hello\" }} {{ variable }} {% for myvar in mylist %} {# content #} </html>";
+
+    var lexer = Lexer.init(content, "none");
+
+    while (lexer.has_next()) {
+        var next = lexer.next();
+        next.log();
     }
 
-    for (pass_three.items) |token| {
-        try tokens.append(token);
-    }
-
-    return tokens;
+    return;
 }
