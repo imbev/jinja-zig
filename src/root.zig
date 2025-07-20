@@ -34,7 +34,7 @@ fn _eval(allocator: std.mem.Allocator, content: []const u8, debug: bool) ![]cons
     if (debug) {
         std.debug.print("==== Template ====\n", .{});
         for (tokens.items) |token| {
-            std.debug.print("== {s} ==\n{s}\n=====\n", .{ @tagName(token.kind), token.content });
+            token.log();
         }
         std.debug.print("=========\n", .{});
     }
@@ -77,3 +77,9 @@ test {
     const source = try _eval_file(allocator, "test/6.jinja", false);
     try testing.expectEqualStrings("<html>\n\n</html>", source);
 }
+
+// test {
+//     const allocator = std.heap.page_allocator;
+//     const source = try _eval_file(allocator, "test/7.jinja", true);
+//     try testing.expectEqualStrings("<div>\n\nyay\n\n</div>", source);
+// }

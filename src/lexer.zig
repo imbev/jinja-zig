@@ -25,7 +25,7 @@ pub const Token = struct {
         };
     }
 
-    pub fn log(self: *Token) void {
+    pub fn log(self: *const Token) void {
         var repr = self.content;
         if (std.mem.eql(u8, "\n", repr)) {
             repr = "newline";
@@ -61,11 +61,11 @@ pub const Lexer = struct {
         };
     }
 
-    pub fn has_next(self: *Lexer) bool {
+    pub fn has_next(self: *const Lexer) bool {
         return self.cursor < self.content.len;
     }
 
-    fn expect(self: *Lexer, expected: []const u8) bool {
+    fn expect(self: *const Lexer, expected: []const u8) bool {
         if (self.cursor + expected.len < self.content.len) {
             if (std.mem.eql(u8, self.content[self.cursor + 1 .. self.cursor + expected.len], expected[0 .. expected.len - 1])) {
                 return true;
@@ -74,14 +74,14 @@ pub const Lexer = struct {
         return false;
     }
 
-    fn starts_with(self: *Lexer, prefix: []const u8) bool {
+    fn starts_with(self: *const Lexer, prefix: []const u8) bool {
         if (self.content.len < self.cursor + prefix.len) {
             return false;
         }
         return std.mem.startsWith(u8, self.content[self.cursor .. self.cursor + prefix.len], prefix[0..prefix.len]);
     }
 
-    fn followed_by_alphabetic(self: *Lexer) bool {
+    fn followed_by_alphabetic(self: *const Lexer) bool {
         if (self.cursor + 1 >= self.content.len) {
             return false;
         }
