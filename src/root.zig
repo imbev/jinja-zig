@@ -1,7 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
 const Lexer = @import("lexer.zig").Lexer;
-const Parser = @import("parser.zig").Parser;
+const Ast = @import("parser.zig").Ast;
 const Token = @import("lexer.zig").Token;
 
 pub fn eval_file(allocator: std.mem.Allocator, path: []const u8) ![]const u8 {
@@ -28,8 +28,8 @@ fn _eval(allocator: std.mem.Allocator, content: []const u8, debug: bool) ![]cons
         try tokens.append(lexer.next());
     }
 
-    var parser = Parser.init(allocator);
-    const final = try parser.parse(tokens);
+    var ast = try Ast.parse(allocator, tokens.items) orelse unreachable;
+    const final = try ast.eval();
 
     if (debug) {
         std.debug.print("\n==== Template ====\n", .{});
@@ -78,8 +78,17 @@ test "6" {
     try testing.expectEqualStrings("<html>\n\n</html>", source);
 }
 
-// test "7" {
+// test {
 //     const allocator = std.heap.page_allocator;
-//     const source = try _eval_file(allocator, "test/7.jinja", true);
-//     try testing.expectEqualStrings("<div>\n\nyay\n\n</div>", source);
+
+//     var lexer = Lexer.init("<html>{# 'my comment' #}hello {{ 'world' }}</html>", "none");
+
+//     var tokens = std.ArrayList(Token).init(allocator);
+//     while (lexer.has_next()) {
+//         try tokens.append(lexer.next());
+//     }
+
+//     const ast = try Ast.parse(allocator, tokens);
+//     std.debug.print("{s}\n", .{try ast.eval()});
+//     @panic("");
 // }
