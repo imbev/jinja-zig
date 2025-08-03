@@ -32,7 +32,7 @@ fn _eval(allocator: std.mem.Allocator, content: []const u8, debug: bool) ![]cons
     const final = try parser.parse(tokens);
 
     if (debug) {
-        std.debug.print("==== Template ====\n", .{});
+        std.debug.print("\n==== Template ====\n", .{});
         for (tokens.items) |token| {
             token.log();
         }
@@ -42,43 +42,43 @@ fn _eval(allocator: std.mem.Allocator, content: []const u8, debug: bool) ![]cons
     return final;
 }
 
-test {
+test "1" {
     const allocator = std.heap.page_allocator;
     const source = try _eval_file(allocator, "test/1.jinja", false);
     try testing.expectEqualStrings("<html>\n</html>", source);
 }
 
-test {
+test "2" {
     const allocator = std.heap.page_allocator;
     const source = try _eval_file(allocator, "test/2.jinja", false);
     try testing.expectEqualStrings("<html>\n<body>\n</body>\n</html>", source);
 }
 
-test {
+test "3" {
     const allocator = std.heap.page_allocator;
     const source = try _eval_file(allocator, "test/3.jinja", false);
     try testing.expectEqualStrings("<html>\n\n</html>", source);
 }
 
-test {
+test "4" {
     const allocator = std.heap.page_allocator;
     const source = try _eval_file(allocator, "test/4.jinja", false);
     try testing.expectEqualStrings("<html>\n<body>\nhello\n</body>\n</html>", source);
 }
 
-test {
+test "5" {
     const allocator = std.heap.page_allocator;
     const source = try _eval_file(allocator, "test/5.jinja", false);
     try testing.expectEqualStrings("<html>\n<body>\nworld\n</body>\n</html>", source);
 }
 
-test {
+test "6" {
     const allocator = std.heap.page_allocator;
     const source = try _eval_file(allocator, "test/6.jinja", false);
     try testing.expectEqualStrings("<html>\n\n</html>", source);
 }
 
-// test {
+// test "7" {
 //     const allocator = std.heap.page_allocator;
 //     const source = try _eval_file(allocator, "test/7.jinja", true);
 //     try testing.expectEqualStrings("<div>\n\nyay\n\n</div>", source);

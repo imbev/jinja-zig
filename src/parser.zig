@@ -15,27 +15,23 @@ pub const Parser = struct {
         while (i < tokens.items.len) {
             switch (tokens.items[i].kind) {
                 TokenKind.OPEN_BRACE => {
-                    var j = i + 1;
-                    switch (tokens.items[j].kind) {
+                    switch (tokens.items[i + 1].kind) {
                         TokenKind.HASH => {
-                            while (!(tokens.items[j].kind == TokenKind.HASH and tokens.items[j + 1].kind == TokenKind.CLOSE_BRACE)) {
-                                j += 1;
+                            i += 2;
+                            while (tokens.items[i].kind != TokenKind.HASH and tokens.items[i + 1].kind != TokenKind.CLOSE_BRACE) {
+                                i += 1;
                             }
-                            i = j + 1;
+                            i += 1;
                         },
                         TokenKind.OPEN_BRACE => {
-                            if (tokens.items[j + 1].kind == TokenKind.SPACE and (tokens.items[j + 2].kind == TokenKind.DOUBLE_QUOTE or tokens.items[j + 2].kind == TokenKind.QUOTE)) {
-                                var k = j + 3;
-                                while (tokens.items[k].kind == TokenKind.STRING) {
-                                    const new_out = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ out, tokens.items[k].content });
-                                    self.allocator.free(out);
-                                    out = new_out;
-                                    k += 1;
-                                }
-                                i = k + 3;
-                            } else {
-                                @panic("unimplemented");
+                            i += 4;
+                            while (tokens.items[i + 1].kind != TokenKind.CLOSE_BRACE and tokens.items[i + 2].kind != TokenKind.CLOSE_BRACE) {
+                                const new_out = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ out, tokens.items[i].content });
+                                self.allocator.free(out);
+                                out = new_out;
+                                i += 1;
                             }
+                            i += 3;
                         },
                         else => {
                             const new_out = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ out, tokens.items[i].content });
@@ -44,7 +40,6 @@ pub const Parser = struct {
                         },
                     }
                 },
-
                 else => {
                     const new_out = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ out, tokens.items[i].content });
                     self.allocator.free(out);
