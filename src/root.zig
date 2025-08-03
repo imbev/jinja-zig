@@ -1,7 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
 const Lexer = @import("lexer.zig").Lexer;
-const Ast = @import("parser.zig").Ast;
+const Parser = @import("parser.zig").Parser;
 const Token = @import("lexer.zig").Token;
 
 pub fn eval_file(allocator: std.mem.Allocator, path: []const u8) ![]const u8 {
@@ -28,7 +28,7 @@ fn _eval(allocator: std.mem.Allocator, content: []const u8, debug: bool) ![]cons
         try tokens.append(lexer.next());
     }
 
-    var ast = try Ast.parse(allocator, tokens.items) orelse unreachable;
+    var ast = try Parser.parse(allocator, tokens.items) orelse unreachable;
     const final = try ast.eval();
 
     if (debug) {

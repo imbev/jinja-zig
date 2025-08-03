@@ -199,11 +199,11 @@ const Tag = struct {
     }
 };
 
-pub const Ast = struct {
+pub const Parser = struct {
     allocator: std.mem.Allocator,
     tags: std.ArrayList(Tag),
 
-    pub fn parse(allocator: std.mem.Allocator, tokens: []const Token) !?Ast {
+    pub fn parse(allocator: std.mem.Allocator, tokens: []const Token) !?Parser {
         var tags = std.ArrayList(Tag).init(allocator);
         var state = State{
             .cursor = 0,
@@ -214,10 +214,10 @@ pub const Ast = struct {
                 try tags.append(tag);
             }
         }
-        return Ast{ .allocator = allocator, .tags = tags };
+        return Parser{ .allocator = allocator, .tags = tags };
     }
 
-    pub fn eval(self: *const Ast) ![]const u8 {
+    pub fn eval(self: *const Parser) ![]const u8 {
         var out: []u8 = "";
 
         for (self.tags.items) |tag| {
@@ -227,7 +227,7 @@ pub const Ast = struct {
         return self.allocator.dupe(u8, out);
     }
 
-    pub fn debug(self: *const Ast) void {
+    pub fn debug(self: *const Parser) void {
         std.debug.print("Template (\n", .{});
         for (self.tags.items) |tag| {
             tag.debug();
@@ -236,6 +236,6 @@ pub const Ast = struct {
     }
 };
 
-pub fn parse(allocator: std.mem.Allocator, tokens: std.ArrayList(Token)) !Ast {
-    return try Ast.parse(allocator, tokens.items) orelse @panic("Unable to parse template: Parse Error");
+pub fn parse(allocator: std.mem.Allocator, tokens: std.ArrayList(Token)) !Parser {
+    return try Parser.parse(allocator, tokens.items) orelse @panic("Unable to parse template: Parse Error");
 }
