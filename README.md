@@ -64,7 +64,7 @@ pub fn on_request(r: zap.Request) !void {
         - [x] integer
         - [ ] float
         - [ ] list
-        - [ ] tumple
+        - [ ] tuple
         - [ ] dict
         - [ ] boolean
     - [ ] Math
