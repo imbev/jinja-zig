@@ -78,6 +78,12 @@ test "6" {
     try testing.expectEqualStrings("<html>\n\n</html>", source);
 }
 
+test "7" {
+    const allocator = std.heap.page_allocator;
+    const source = try _eval_file(allocator, "test/7.jinja", false);
+    try testing.expectEqualStrings("<html>\n<body>\n42\n</body>\n</html>", source);
+}
+
 // test {
 //     const allocator = std.heap.page_allocator;
 

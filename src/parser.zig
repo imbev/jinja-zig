@@ -83,13 +83,85 @@ const Comment = struct {
     }
 };
 
+const String = struct {
+    allocator: std.mem.Allocator,
+    tokens: []const Token,
+
+    pub fn parse(allocator: std.mem.Allocator, state: *State) ?String {
+        var cursor = state.cursor;
+
+        cursor += 1; // open brace
+        cursor += 1; // open brace
+        cursor += 1; // space
+
+        if (state.tokens[cursor].kind != TokenKind.QUOTE and state.tokens[cursor].kind != TokenKind.DOUBLE_QUOTE) {
+            return null;
+        }
+        const quote_kind = state.tokens[cursor].kind;
+        cursor += 1;
+
+        const start_index = cursor;
+        while (state.tokens[cursor].kind != quote_kind) {
+            cursor += 1;
+        }
+
+        if (state.tokens[cursor].kind != quote_kind) {
+            return null;
+        }
+        cursor += 1;
+
+        state.cursor = cursor;
+        return String { .allocator = allocator, .tokens = state.tokens[start_index..state.cursor-1] };
+    }
+
+    pub fn eval(self: String) ![]const u8 {
+        var out: []u8 = "";
+
+        for (self.tokens) |token| {
+            out = try std.mem.concat(self.allocator, u8, &[_][]const u8{ out, token.content });
+        }
+
+        return self.allocator.dupe(u8, out);
+    }
+};
+
+const Integer = struct {
+    allocator: std.mem.Allocator,
+    value: isize,
+
+    pub fn parse(allocator: std.mem.Allocator, state: *State) ?Integer {
+        var cursor = state.cursor;
+
+        cursor += 1; // open brace
+        cursor += 1; // open brace
+        cursor += 1; // space
+
+        if (state.tokens[cursor].kind != TokenKind.INTEGER) {
+            return null;
+        }
+        const value = std.fmt.parseInt(isize, state.tokens[cursor].content, 10) catch unreachable;
+        cursor += 1;
+
+        state.cursor = cursor;
+        return Integer { .allocator = allocator, .value = value };
+    }
+
+    pub fn eval(self: Integer) ![]const u8 {
+        return try std.fmt.allocPrint(self.allocator, "{d}", .{self.value});
+    }
+};
+
+const ExpressionKind = union(enum) { string: String, integer: Integer };
+
 const Expression = struct {
     allocator: std.mem.Allocator,
     start_index: usize,
     end_index: usize,
     tokens: []const Token,
+    kind: ExpressionKind,
 
     fn parse(allocator: std.mem.Allocator, state: *State) !?Expression {
+        var expression_kind: ?ExpressionKind = null;
         const start_index = state.cursor;
         var cursor = state.cursor;
 
@@ -103,12 +175,22 @@ const Expression = struct {
         }
         cursor += 1;
 
-        while (state.tokens[cursor].kind != TokenKind.CLOSE_BRACE) {
-            cursor += 1;
-            if (cursor >= state.tokens.len) {
-                std.debug.print("Error: Opened expressions must be closed or escaped\n", .{});
-                return Errors.SyntaxError.ExpressionNotClosed;
-            }
+        if (String.parse(allocator, state)) |string| {
+            expression_kind = ExpressionKind{ .string = string };
+            cursor = state.cursor;
+        } else if (Integer.parse(allocator, state)) |integer| {
+            expression_kind = ExpressionKind{ .integer = integer };
+            cursor = state.cursor;
+        } else {
+            state.tokens[cursor].log();
+            @panic("Unimplemented");
+        }
+
+        cursor += 1; // space
+
+        if (state.tokens[cursor].kind != TokenKind.CLOSE_BRACE) {
+            std.debug.print("Error: Opened expressions must be closed or escaped\n", .{});
+            return Errors.SyntaxError.ExpressionNotClosed;
         }
         cursor += 1;
 
@@ -119,20 +201,18 @@ const Expression = struct {
         cursor += 1;
 
         state.cursor = cursor;
-        return Expression{ .allocator = allocator, .start_index = start_index, .end_index = state.cursor - 1, .tokens = state.tokens[start_index..state.cursor] };
+        return Expression{ .allocator = allocator, .start_index = start_index, .end_index = state.cursor - 1, .tokens = state.tokens[start_index..state.cursor], .kind = expression_kind.? };
     }
 
     fn eval(self: *const Expression) ![]const u8 {
-        var out: []u8 = "";
-
-        for (0..self.tokens.len) |i| {
-            if (i < 4 or i >= self.tokens.len - 4) {
-                continue;
+        switch (self.kind) {
+            .string => |string| {
+                return string.eval();
+            },
+            .integer => |integer| {
+                return integer.eval();
             }
-            out = try std.mem.concat(self.allocator, u8, &[_][]const u8{ out, self.tokens[i].content });
         }
-
-        return self.allocator.dupe(u8, out);
     }
 
     fn debug(self: *const Expression) void {

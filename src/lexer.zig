@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub const TokenKind = enum { CHAR, OPEN_BRACE, CLOSE_BRACE, PERCENT, HASH, QUOTE, DOUBLE_QUOTE, FOR, IN, VARIABLE, SPACE, EOF };
+pub const TokenKind = enum { CHAR, OPEN_BRACE, CLOSE_BRACE, PERCENT, HASH, QUOTE, DOUBLE_QUOTE, FOR, IN, VARIABLE, SPACE, INTEGER, EOF };
 
 pub const Token = struct {
     kind: TokenKind,
@@ -88,7 +88,22 @@ pub const Lexer = struct {
                 self.cursor += 1;
                 return Token.init(TokenKind.QUOTE, "'");
             },
+            '"' => {
+                self.cursor += 1;
+                return Token.init(TokenKind.DOUBLE_QUOTE, "\"");
+            },
             else => {
+                if (std.ascii.isDigit(self.peek())) {
+                    var sum: usize = 0;
+                    const start_index = self.cursor;
+                    while(std.ascii.isDigit(self.peek())) {
+                        sum *= 10;
+                        sum += std.fmt.charToDigit(self.peek(), 10) catch unreachable;
+                        self.cursor += 1;
+                    }
+                    return Token.init(TokenKind.INTEGER, self.content[start_index..self.cursor]);
+                }
+
                 self.cursor += 1;
                 return Token.init(TokenKind.CHAR, self.content[self.cursor - 1 .. self.cursor]);
             },
