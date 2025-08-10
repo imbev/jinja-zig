@@ -6,6 +6,7 @@ const Errors = @import("errors.zig");
 const State = struct { cursor: usize, tokens: []const Token };
 
 const PlainText = struct {
+    allocator: std.mem.Allocator,
     content: []const u8,
 
     fn parse(allocator: std.mem.Allocator, state: *State) !?PlainText {
@@ -26,11 +27,17 @@ const PlainText = struct {
             state.cursor += 1;
         }
 
-        return PlainText{ .content = text };
+        return PlainText{ .allocator = allocator, .content = text };
     }
 
-    fn eval(self: *const PlainText) []const u8 {
-        return self.content;
+    fn deinit(self: *PlainText) void {
+        if (self.content.len > 0) {
+            self.allocator.free(self.content);
+        }
+    }
+
+    fn eval(self: *const PlainText) ![]const u8 {
+        return try self.allocator.dupe(u8, self.content);
     }
 
     fn debug(self: *const PlainText) void {
@@ -87,7 +94,7 @@ const String = struct {
     allocator: std.mem.Allocator,
     tokens: []const Token,
 
-    pub fn parse(allocator: std.mem.Allocator, state: *State) ?String {
+    fn parse(allocator: std.mem.Allocator, state: *State) ?String {
         var cursor = state.cursor;
 
         cursor += 1; // open brace
@@ -114,11 +121,14 @@ const String = struct {
         return String { .allocator = allocator, .tokens = state.tokens[start_index..state.cursor-1] };
     }
 
-    pub fn eval(self: String) ![]const u8 {
+    fn eval(self: String) ![]const u8 {
         var out: []u8 = "";
+        defer if (out.len > 0) self.allocator.free(out);
 
         for (self.tokens) |token| {
-            out = try std.mem.concat(self.allocator, u8, &[_][]const u8{ out, token.content });
+            const new_out = try std.mem.concat(self.allocator, u8, &[_][]const u8{ out, token.content });
+            self.allocator.free(out);
+            out = new_out;
         }
 
         return self.allocator.dupe(u8, out);
@@ -129,7 +139,7 @@ const Integer = struct {
     allocator: std.mem.Allocator,
     value: isize,
 
-    pub fn parse(allocator: std.mem.Allocator, state: *State) ?Integer {
+    fn parse(allocator: std.mem.Allocator, state: *State) ?Integer {
         var cursor = state.cursor;
 
         cursor += 1; // open brace
@@ -146,7 +156,7 @@ const Integer = struct {
         return Integer { .allocator = allocator, .value = value };
     }
 
-    pub fn eval(self: Integer) ![]const u8 {
+    fn eval(self: Integer) ![]const u8 {
         return try std.fmt.allocPrint(self.allocator, "{d}", .{self.value});
     }
 };
@@ -204,6 +214,10 @@ const Expression = struct {
         return Expression{ .allocator = allocator, .start_index = start_index, .end_index = state.cursor - 1, .tokens = state.tokens[start_index..state.cursor], .kind = expression_kind.? };
     }
 
+    fn deinit(self: *Expression) void {
+        _ = self;
+    }
+
     fn eval(self: *const Expression) ![]const u8 {
         switch (self.kind) {
             .string => |string| {
@@ -246,6 +260,18 @@ const Tag = struct {
         }
 
         return null;
+    }
+
+    fn deinit(self: *Tag) void {
+        switch (self.kind) {
+            .plaintext => |*plaintext| {
+                plaintext.deinit();
+            },
+            .expression => |*expression| {
+                expression.deinit();
+            },
+            .comment => |_| {}
+        }
     }
 
     fn eval(self: *const Tag) ![]const u8 {
@@ -297,14 +323,26 @@ pub const Parser = struct {
         return Parser{ .allocator = allocator, .tags = tags };
     }
 
+    pub fn deinit(self: *Parser) void {
+        for (self.tags.items) |*tag| {
+            tag.deinit();
+        }
+        self.tags.deinit();
+    }
+
     pub fn eval(self: *const Parser) ![]const u8 {
         var out: []u8 = "";
 
         for (self.tags.items) |tag| {
-            out = try std.mem.concat(self.allocator, u8, &[_][]const u8{ out, try tag.eval() });
+            const tag_result = try tag.eval();
+            defer self.allocator.free(tag_result);
+
+            const new_out = try std.mem.concat(self.allocator, u8, &.{ out, tag_result });
+            if (out.len > 0) self.allocator.free(out);
+            out = new_out;
         }
 
-        return self.allocator.dupe(u8, out);
+        return out;
     }
 
     pub fn debug(self: *const Parser) void {
