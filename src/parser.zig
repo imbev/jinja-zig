@@ -161,7 +161,36 @@ const Integer = struct {
     }
 };
 
-const ExpressionKind = union(enum) { string: String, integer: Integer };
+const Boolean = struct {
+    allocator: std.mem.Allocator,
+    is_true: bool,
+
+    fn parse(allocator: std.mem.Allocator, state: *State) ?Boolean {
+        var cursor = state.cursor;
+
+        cursor += 1; // open brace
+        cursor += 1; // open brace
+        cursor += 1; // space
+
+        if (state.tokens[cursor].kind != TokenKind.BOOLEAN) {
+            return null;
+        }
+        const is_true = std.mem.startsWith(u8, state.tokens[cursor].content, "true");
+        cursor += 1;
+
+        state.cursor = cursor;
+        return Boolean { .allocator = allocator, .is_true = is_true };
+    }
+
+    fn eval(self: *const Boolean) ![]const u8 {
+        if (self.is_true) {
+            return try std.fmt.allocPrint(self.allocator, "true", .{});
+        }
+        return try std.fmt.allocPrint(self.allocator, "false", .{});
+    }
+};
+
+const ExpressionKind = union(enum) { string: String, integer: Integer, boolean: Boolean };
 
 const Expression = struct {
     allocator: std.mem.Allocator,
@@ -190,6 +219,9 @@ const Expression = struct {
             cursor = state.cursor;
         } else if (Integer.parse(allocator, state)) |integer| {
             expression_kind = ExpressionKind{ .integer = integer };
+            cursor = state.cursor;
+        } else if (Boolean.parse(allocator, state)) |boolean| {
+            expression_kind = ExpressionKind{ .boolean = boolean };
             cursor = state.cursor;
         } else {
             state.tokens[cursor].log();
@@ -225,6 +257,9 @@ const Expression = struct {
             },
             .integer => |integer| {
                 return integer.eval();
+            },
+            .boolean => |boolean| {
+                return boolean.eval();
             }
         }
     }

@@ -77,6 +77,10 @@ test "comment_single_line" {
     try test_eval(std.testing.allocator, "test/comment_single_line", false);
 }
 
+test "expression_literal_boolean" {
+    try test_eval(std.testing.allocator, "test/expression_literal_boolean", false);
+}
+
 test "expresssion_literal_integer" {
     try test_eval(std.testing.allocator, "test/expression_literal_integer", false);
 }
